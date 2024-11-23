@@ -1,8 +1,8 @@
-require('dotenv').config()
+require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
-const path = require('path'); // Import path module
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve the main HTML file (index.html) at the root URL
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html')); // Adjust the filename as necessary
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Endpoint to handle order details request
@@ -32,13 +32,13 @@ app.post('/send-order-details', (req, res) => {
     const transporter = nodemailer.createTransport({
         service: 'gmail', // Use your email service provider
         auth: {
-            user: 'process.env.EMAIL', // Your email address
-            pass: 'process.env.PASSWORD' // Your email password or app password; consider using environment variables for security
+            user: process.env.EMAIL, // Correctly reference environment variable
+            pass: process.env.PASSWORD // Correctly reference environment variable
         }
     });
 
     const mailOptions = {
-        from: 'process.env.EMAIL',
+        from: process.env.EMAIL,
         to: email,
         subject: 'Your Order Details',
         text: `Hello! Here are your order details:\n\n` +
@@ -52,6 +52,7 @@ app.post('/send-order-details', (req, res) => {
     // Send email asynchronously
     transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
+            console.error('Error sending email:', error); // Log error for debugging
             return res.status(500).json({ success: false, message: 'Error sending email.' });
         }
         
