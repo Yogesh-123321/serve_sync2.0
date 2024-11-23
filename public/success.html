@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful</title>
+  <link rel="stylesheet" href="success.css">
+</head>
+<body>
+  <header>
+    <h1>Payment Successful!</h1>
+  </header>
+
+  <main>
+    <section class="success">
+      <!-- Green checkmark animation -->
+      <div class="checkmark-container">
+        <div class="checkmark"></div>
+      </div>
+      <p>Your payment was successful. Thank you for your purchase!</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 Cafe Management System</p>
+  </footer>
+
+  <script>
+    // Play coin sound after payment
+    const coinSound = new Audio('coin-sound.mp3');
+    coinSound.play();
+  </script>
+</body>
+</html>

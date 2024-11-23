@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cafe Management System</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>CAFE MANAGEMENT SYSTEM</h1>
+    <h3 class="welcome-greeting">Welcome to our cafe! Browse our menu and enjoy your time.</h3>
+    <br>
+    <br>
+    <h2>Menu</h2>
+  </header>
+
+  <main>
+    <section class="menu">
+      
+
+      <!-- Existing Menu Items with Images -->
+      <div class="menu-item">
+        <img src="espresso.jpg" alt="Espresso">
+        <p class="item-name">Espresso</p>
+        <p class="item-price">₹300</p>
+        <button onclick="addToOrder('Espresso', 300)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Latte.jpg" alt="Latte">
+        <p class="item-name">Latte</p>
+        <p class="item-price">₹450</p>
+        <button onclick="addToOrder('Latte', 450)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Cappuccino.jpeg" alt="Cappuccino">
+        <p class="item-name">Cappuccino</p>
+        <p class="item-price">₹400</p>
+        <button onclick="addToOrder('Cappuccino', 400)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Americano.webp" alt="Americano">
+        <p class="item-name">Americano</p>
+        <p class="item-price">₹350</p>
+        <button onclick="addToOrder('Americano', 350)">Add to Order</button>
+      </div>
+
+      <!-- New Menu Items with Images -->
+      <div class="menu-item">
+        <img src="Mocha.jpg" alt="Mocha">
+        <p class="item-name">Mocha</p>
+        <p class="item-price">₹475</p>
+        <button onclick="addToOrder('Mocha', 475)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Flat white.jpg" alt="Flat White">
+        <p class="item-name">Flat White</p>
+        <p class="item-price">₹425</p>
+        <button onclick="addToOrder('Flat White', 425)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Hot chocolate.jpg" alt="Hot Chocolate">
+        <p class="item-name">Hot Chocolate</p>
+        <p class="item-price">₹375</p>
+        <button onclick="addToOrder('Hot Chocolate', 375)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Green tea.avif" alt="Green Tea">
+        <p class="item-name">Green Tea</p>
+        <p class="item-price">₹325</p>
+        <button onclick="addToOrder('Green Tea', 325)">Add to Order</button>
+      </div>
+
+      <!-- Additional 12 New Menu Items with Images -->
+      <div class="menu-item">
+        <img src="Black tea.webp" alt="Black Tea">
+        <p class="item-name">Black Tea</p>
+        <p class="item-price">₹275</p>
+        <button onclick="addToOrder('Black Tea', 275)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Chai latte.webp" alt="Chai Latte">
+        <p class="item-name">Chai Latte</p>
+        <p class="item-price">₹400</p>
+        <button onclick="addToOrder('Chai Latte', 400)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Iced coffee.jpeg" alt="Iced Coffee">
+        <p class="item-name">Iced Coffee</p>
+        <p class="item-price">₹350</p>
+        <button onclick="addToOrder('Iced Coffee', 350)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Frappuccino.jpg" alt="Frappuccino">
+        <p class="item-name">Frappuccino</p>
+        <p class="item-price">₹500</p>
+        <button onclick="addToOrder('Frappuccino', 500)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Muffin.jpg" alt="Muffin">
+        <p class="item-name">Muffin</p>
+        <p class="item-price">₹250</p>
+        <button onclick="addToOrder('Muffin', 250)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Croissant.jpeg" alt="Croissant">
+        <p class="item-name">Croissant</p>
+        <p class="item-price">₹275</p>
+        <button onclick="addToOrder('Croissant', 275)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Bagel.jpeg" alt="Bagel">
+        <p class="item-name">Bagel</p>
+        <p class="item-price">₹300</p>
+        <button onclick="addToOrder('Bagel', 300)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Cheesecake.webp" alt="Cheesecake">
+        <p class="item-name">Cheesecake</p>
+        <p class="item-price">₹400</p>
+        <button onclick="addToOrder('Cheesecake', 400)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Brownie.webp" alt="Brownie">
+        <p class="item-name">Brownie</p>
+        <p class="item-price">₹325</p>
+        <button onclick="addToOrder('Brownie', 325)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Tirasimu.jpeg" alt="Tiramisu">
+        <p class="item-name">Tiramisu</p>
+        <p class="item-price">₹450</p>
+        <button onclick="addToOrder('Tiramisu', 450)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="PanCakes.jpg" alt="Pancakes">
+        <p class="item-name">Pancakes</p>
+        <p class="item-price">₹500</p>
+        <button onclick="addToOrder('Pancakes', 500)">Add to Order</button>
+      </div>
+      <div class="menu-item">
+        <img src="Waffles.jpg" alt="Waffles">
+        <p class="item-name">Waffles</p>
+        <p class="item-price">₹450</p>
+        <button onclick="addToOrder('Waffles', 450)">Add to Order</button>
+      </div>
+    </section>
+
+    <section class="order">
+      <h2>Your Order</h2>
+      <ul id="orderList"></ul>
+      <p> <span id="totalPrice">₹ 0</span></p>
+      <button onclick="clearOrder()">Clear Order</button>
+      <br><br>
+      <button onclick="placeOrder()">Place Order</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 Cafe Management System</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

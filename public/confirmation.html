@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation</title>
+  <link rel="stylesheet" href="confirmation.css">
+</head>
+<body>
+  <header>
+    <h1>Order Confirmation</h1>
+  </header>
+
+  <main>
+    <section class="confirmation">
+      <h2>Your Order is Confirmed!</h2>
+      <h3>Thank you for your order!</h3>
+
+      <!-- Display order details -->
+      <ul id="orderDetails"></ul>
+      <p>Total: ₹<span id="finalPrice">0</span></p>
+
+      <!-- Customer email and table number input -->
+      <div class="customer-info">
+        <label for="emailInput"><strong>Email Address:</strong></label>
+        <input type="email" id="emailInput" placeholder="Enter your email address" required>
+        <br><br>
+        
+        <label for="tableNumberInput"><strong>Table Number:</strong></label>
+        <input type="text" id="tableNumberInput" placeholder="Enter your table number" required>
+        <br><br>
+      </div>
+
+      <!-- Payment options -->
+      <h4>Select Payment Method</h4>
+      <form id="paymentForm">
+        <label>
+          <input type="radio" name="paymentMethod" value="UPI" required> UPI
+        </label>
+        <br>
+        <label>
+          <input type="radio" name="paymentMethod" value="Cash"> Cash
+        </label>
+        <br><br>
+
+        <!-- QR Code Scanner (Initially hidden, will show on UPI/Scanner selection) -->
+        <div id="qrScanner" style="display: none;">
+          <p>Scan the QR code using your UPI app</p>
+          <!-- QR Code Scanner will be embedded here -->
+          <video id="qr-video" width="300"></video> <!-- Video element for scanner -->
+        </div>
+
+        <br>
+        <button type="submit" id="submitButton">Complete Payment</button>
+      </form>
+
+      <!-- Go back button -->
+      <button onclick="goBack()">Go Back to Menu</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 Cafe Management System</p>
+  </footer>
+
+  <script src="confirmation.js"></script>
+  <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script> <!-- Include jsQR for QR code scanning -->
+</body>
+</html>

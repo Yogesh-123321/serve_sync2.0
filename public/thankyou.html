@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thank You</title>
+  <link rel="stylesheet" href="thankyou.css">
+</head>
+<body>
+  <header>
+    <h1>Thank You for Your Order!</h1>
+  </header>
+
+  <main>
+    <section class="thank-you">
+      <h2>Payment Successful</h2>
+      <p>We appreciate your order. Your payment has been successfully processed!</p>
+
+      <!-- Display order summary -->
+      <h3>Order Summary</h3>
+      <ul id="thankYouOrderDetails"></ul>
+      <p>Total: ₹<span id="thankYouTotalPrice">0</span></p>
+
+      <!-- Display customer details -->
+      <div class="customer-info">
+        <p><strong>Email:</strong> <span id="thankYouEmail"></span></p> <!-- Email display -->
+        <p><strong>Table Number:</strong> <span id="thankYouTableNumber"></span></p> <!-- Table number display -->
+      </div>
+
+      <!-- Button to return to the menu -->
+      <button onclick="goBackToMenu()">Go Back to Menu</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 Cafe Management System</p>
+  </footer>
+
+  <script src="thankyou.js"></script> <!-- Link to your JavaScript file -->
+</body>
+</html>
