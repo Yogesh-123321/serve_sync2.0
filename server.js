@@ -25,7 +25,7 @@ const orderSchema = new mongoose.Schema({
     paymentMethod: String,
     orderItems: Array,
     totalPrice: Number,
-    date: { type: Date, default: Date.now }
+    date: { type: Date, default: () => new Date() } // Ensuring correct date format
 });
 const Order = mongoose.model('Order', orderSchema);
 
@@ -39,12 +39,41 @@ const Admin = mongoose.model('Admin', adminSchema);
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: false })); // Disable automatic index.html serving
 
-// Serve main HTML file
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "home.html"));
+});
+
+// Serve User and Admin pages
+app.get('/index', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+app.get("/admin-login", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "admin-login.html"));
+});
+
+app.get("/admin", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
+// Middleware to verify admin token for API routes
+const verifyToken = (req, res, next) => {
+    const token = req.headers["authorization"];
+    if (!token) return res.status(403).json({ success: false, message: "No token provided" });
+
+    const tokenParts = token.split(" ");
+    if (tokenParts.length !== 2 || tokenParts[0] !== "Bearer") {
+        return res.status(401).json({ success: false, message: "Invalid token format" });
+    }
+
+    jwt.verify(tokenParts[1], JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(401).json({ success: false, message: "Unauthorized" });
+        req.adminId = decoded.id;
+        next();
+    });
+};
 
 // Save order details to MongoDB and send email
 app.post('/send-order-details', async (req, res) => {
@@ -54,7 +83,6 @@ app.post('/send-order-details', async (req, res) => {
     }
     
     try {
-        // Save order in MongoDB
         const newOrder = new Order({ email, tableNumber, paymentMethod, orderItems, totalPrice });
         await newOrder.save();
         
@@ -78,6 +106,26 @@ app.post('/send-order-details', async (req, res) => {
     }
 });
 
+// Function to create an admin with a hashed password
+const createAdmin = async () => {
+    const username = "admin";
+    const plainPassword = "admin";
+    
+    const existingAdmin = await Admin.findOne({ username });
+    if (existingAdmin) {
+        console.log("Admin already exists!");
+        return;
+    }
+    
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    const newAdmin = new Admin({ username, password: hashedPassword });
+    
+    await newAdmin.save();
+    console.log("Admin created successfully!");
+};
+// Uncomment and run once to create an admin user
+//createAdmin();
+
 // Admin login endpoint
 app.post('/admin/login', async (req, res) => {
     const { username, password } = req.body;
@@ -89,26 +137,36 @@ app.post('/admin/login', async (req, res) => {
     res.json({ success: true, token });
 });
 
-// Middleware to verify admin token
-const verifyToken = (req, res, next) => {
-    const token = req.headers['authorization'];
-    if (!token) return res.status(403).json({ success: false, message: 'No token provided' });
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) return res.status(401).json({ success: false, message: 'Unauthorized' });
-        req.adminId = decoded.id;
-        next();
-    });
-};
-
-// Get sales statistics (protected route)
+// Get sales statistics (Protected API)
 app.get('/admin/sales', verifyToken, async (req, res) => {
     try {
         const salesData = await Order.aggregate([
-            { $group: { _id: '$date', totalSales: { $sum: '$totalPrice' }, totalOrders: { $sum: 1 } } }
+            {
+                $group: {
+                    _id: { 
+                        $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "Asia/Kolkata" } 
+                    },
+                    totalSales: { $sum: "$totalPrice" },
+                    totalOrders: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } } // Ensure sales appear in chronological order
         ]);
+
+        console.log("Sales Data:", salesData); // Debugging: Ensure today's sales appear
         res.json({ success: true, salesData });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching sales data' });
+    }
+});
+
+// Get all orders (Protected API)
+app.get('/admin/orders', verifyToken, async (req, res) => {
+    try {
+        const orders = await Order.find().sort({ date: -1 });
+        res.json({ success: true, orders });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching orders' });
     }
 });
 

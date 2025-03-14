@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Our Restaurant</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to your existing CSS file -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f8f8;
+            text-align: center;
+            padding: 20px;
+        }
+        .myclass {
+            color: #ffffff; /* White text color */
+            font-size: 36px; /* Increased font size */
+            font-weight: bold;
+            margin-top: 30px;
+            background-color: #27ae60; /* Green background for theme */
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #27ae60; /* Green background for theme */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #ffffff; /* White text color for contrast */
+        }
+        .btn-container {
+            margin: 20px 0;
+        }
+        .btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .user-btn { background-color: #3498db; color: white; }
+        .admin-btn { background-color: #e74c3c; color: white; }
+        .btn:hover { opacity: 0.8; }
+
+        /* Slideshow */
+        .slideshow-container {
+            position: relative;
+            max-width: 600px;
+            margin: auto;
+            margin-top: 30px;
+            perspective: 1000px;
+        }
+        .feedback-card {
+            display: none;
+            background: #27ae60; /* Green slide background */
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            font-size: 18px;
+            color: #ffffff; /* White text for contrast */
+            opacity: 0;
+            transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+            transform-origin: center right;
+        }
+        .feedback-card img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .feedback-card.active {
+            display: block;
+            opacity: 1;
+            transform: rotateY(0deg);
+        }
+        .feedback-card.previous {
+            transform: rotateY(-90deg);
+        }
+        p{
+            color: white;
+        }
+    </style>
+    <script>
+        function redirectToPage(role) {
+            if (role === 'user') {
+                window.location.href = "index.html";
+            } else if (role === 'admin') {
+                window.location.href = "admin-login.html";
+            }
+        }
+
+        let slideIndex = 0;
+        function showSlides() {
+            let slides = document.getElementsByClassName("feedback-card");
+            for (let i = 0; i < slides.length; i++) {
+                slides[i].classList.remove("active");
+                slides[i].classList.remove("previous");
+            }
+            let prevIndex = slideIndex;
+            slideIndex++;
+            if (slideIndex > slides.length) { slideIndex = 1; }
+            if (prevIndex > 0) slides[prevIndex - 1].classList.add("previous");
+            slides[slideIndex - 1].classList.add("active");
+            setTimeout(showSlides, 7000);
+        }
+        window.onload = showSlides;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome to Our Restaurant</h2>
+        <p>Choose your role to continue:</p>
+        <div class="btn-container">
+            <button class="btn user-btn" onclick="redirectToPage('user')">User</button>
+            <button class="btn admin-btn" onclick="redirectToPage('admin')">Admin</button>
+        </div>
+    </div>
+    
+    <h1 class="myclass">What Our Customers Say</h1>
+    <div class="slideshow-container">
+        <div class="feedback-card active">
+            <img src="https://cdn-icons-png.flaticon.com/512/219/219969.png" alt="User 1">
+            <p class="feedback-text">"Amazing food and great service! The ambiance was just perfect, and the staff was incredibly friendly. The variety of dishes was amazing, and every bite was flavorful. Will visit again!" - John D.</p>
+        </div>
+        <div class="feedback-card">
+            <img src="https://cdn-icons-png.flaticon.com/512/219/219986.png" alt="User 2">
+            <p class="feedback-text">"Best restaurant in town! The flavors were top-notch, and the presentation was exquisite. I was impressed with the service and the friendly staff. Highly recommended!" - Sarah L.</p>
+        </div>
+        <div class="feedback-card">
+            <img src="https://cdn-icons-png.flaticon.com/512/187/187488.png" alt="User 3">
+            <p class="feedback-text">"The best experience I've ever had at a restaurant! The food was fresh, delicious, and beautifully presented." - Mark S.</p>
+        </div>
+        <div class="feedback-card">
+            <img src="https://cdn-icons-png.flaticon.com/512/219/219988.png" alt="User 4">
+            <p class="feedback-text">"Absolutely loved everything about this place! The atmosphere, the food, and the service were all fantastic." - Emily R.</p>
+        </div>
+    </div>
+</body>
+</html>

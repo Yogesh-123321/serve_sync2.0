@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+        }
+        .dashboard-container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .btn-danger {
+            background-color: #ff6f61;
+            border: none;
+        }
+        .btn-danger:hover {
+            background-color: #e65c50;
+        }
+        canvas {
+            max-width: 350px !important;
+            max-height: 200px !important;
+            margin: auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container dashboard-container">
+        <h2 class="text-center">Admin Dashboard</h2>
+        <button class="btn btn-danger float-end" onclick="logout()">Logout</button>
+        <div class="mt-4">
+            <h3>Sales Statistics</h3>
+            <canvas id="salesChart"></canvas>
+        </div>
+        <div class="mt-4">
+            <h3>Payment Methods</h3>
+            <canvas id="paymentChart"></canvas>
+        </div>
+        <div class="mt-4">
+            <h3>Recent Orders</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Table Number</th>
+                        <th>Payment Method</th>
+                        <th>Order Items</th>
+                        <th>Total Price</th>
+                    </tr>
+                </thead>
+                <tbody id="orderData"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const token = localStorage.getItem("adminToken");
+
+            // Redirect to login if no token found
+            if (!token) {
+                window.location.href = "/admin-login.html";
+                return;
+            }
+
+            fetchSalesData();
+            fetchOrders();
+        });
+
+        async function fetchSalesData() {
+            const token = localStorage.getItem("adminToken");
+            if (!token) {
+                window.location.href = "/admin-login.html";
+                return;
+            }
+
+            try {
+                const res = await fetch("/admin/sales", {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    const salesLabels = data.salesData.map(sale => new Date(sale._id).toLocaleDateString());
+                    const salesValues = data.salesData.map(sale => sale.totalSales);
+
+                    new Chart(document.getElementById("salesChart"), {
+                        type: 'bar',
+                        data: {
+                            labels: salesLabels,
+                            datasets: [{
+                                label: "Total Sales",
+                                backgroundColor: "#4CAF50",
+                                data: salesValues
+                            }]
+                        },
+                        options: { responsive: true }
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching sales data:", error);
+            }
+        }
+
+        async function fetchOrders() {
+            const token = localStorage.getItem("adminToken");
+            if (!token) {
+                window.location.href = "/admin-login.html";
+                return;
+            }
+
+            try {
+                const res = await fetch("/admin/orders", {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    const orderTable = document.getElementById("orderData");
+                    let paymentCounts = { Cash: 0, Card: 0, UPI: 0 };
+
+                    orderTable.innerHTML = data.orders.map(order => {
+                        paymentCounts[order.paymentMethod] = (paymentCounts[order.paymentMethod] || 0) + 1;
+                        return `
+                            <tr>
+                                <td>${order.email}</td>
+                                <td>${order.tableNumber}</td>
+                                <td>${order.paymentMethod}</td>
+                                <td>${order.orderItems.map(item => `${item.name} (₹${item.price})`).join("<br>")}</td>
+                                <td>₹${order.totalPrice}</td>
+                            </tr>`;
+                    }).join("");
+
+                    new Chart(document.getElementById("paymentChart"), {
+                        type: 'pie',
+                        data: {
+                            labels: Object.keys(paymentCounts),
+                            datasets: [{
+                                data: Object.values(paymentCounts),
+                                backgroundColor: ["#ff6384", "#36a2eb", "#ffcd56"]
+                            }]
+                        },
+                        options: { responsive: true }
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+            }
+        }
+
+        function handleUnauthorized() {
+            localStorage.removeItem("adminToken");
+            window.location.href = "/admin-login.html";
+        }
+
+        function logout() {
+            localStorage.removeItem("adminToken");
+            setTimeout(() => {
+                window.location.href = "/admin-login.html";
+            }, 500);
+        }
+    </script>
+</body>
+</html>
