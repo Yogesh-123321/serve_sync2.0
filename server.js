@@ -1,67 +1,118 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 const path = require('path');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
-// Middleware to parse request body
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => console.log('MongoDB Connected'))
+  .catch(err => console.log('MongoDB Connection Error:', err));
+
+// Define Order Schema
+const orderSchema = new mongoose.Schema({
+    email: String,
+    tableNumber: Number,
+    paymentMethod: String,
+    orderItems: Array,
+    totalPrice: Number,
+    date: { type: Date, default: Date.now }
+});
+const Order = mongoose.model('Order', orderSchema);
+
+// Define Admin Schema
+const adminSchema = new mongoose.Schema({
+    username: String,
+    password: String
+});
+const Admin = mongoose.model('Admin', adminSchema);
+
+// Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve the main HTML file (index.html) at the root URL
+// Serve main HTML file
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Endpoint to handle order details request
-app.post('/send-order-details', (req, res) => {
+// Save order details to MongoDB and send email
+app.post('/send-order-details', async (req, res) => {
     const { email, tableNumber, paymentMethod, orderItems, totalPrice } = req.body;
-
-    // Validate inputs (basic validation)
     if (!email || !tableNumber || !paymentMethod) {
         return res.status(400).json({ success: false, message: 'All fields are required.' });
     }
-
-    // Set up Nodemailer transporter
-    const transporter = nodemailer.createTransport({
-        service: 'gmail', // Use your email service provider
-        auth: {
-            user: process.env.EMAIL, // Correctly reference environment variable
-            pass: process.env.PASSWORD // Correctly reference environment variable
-        }
-    });
-
-    const mailOptions = {
-        from: process.env.EMAIL,
-        to: email,
-        subject: 'Your Order Details',
-        text: `Hello! Here are your order details:\n\n` +
-              `Table Number: ${tableNumber}\n` +
-              `Payment Method: ${paymentMethod}\n` +
-              `Order Items: ${orderItems.map(item => item.name).join(', ')}\n` +
-              `Total Price: ₹${totalPrice}\n` +
-              `Thank you for your order!`
-    };
-
-    // Send email asynchronously
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error('Error sending email:', error); // Log error for debugging
-            return res.status(500).json({ success: false, message: 'Error sending email.' });
-        }
+    
+    try {
+        // Save order in MongoDB
+        const newOrder = new Order({ email, tableNumber, paymentMethod, orderItems, totalPrice });
+        await newOrder.save();
         
-        // Send success response
+        // Send email
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user: process.env.EMAIL, pass: process.env.PASSWORD }
+        });
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: email,
+            subject: 'Your Order Details',
+            text: `Table Number: ${tableNumber}\nPayment Method: ${paymentMethod}\nOrder Items: ${orderItems.map(item => item.name).join(', ')}\nTotal Price: ₹${totalPrice}\nThank you for your order!`
+        };
+        await transporter.sendMail(mailOptions);
+        
         res.json({ success: true });
-    });
+    } catch (error) {
+        console.error('Error saving order:', error);
+        res.status(500).json({ success: false, message: 'Error processing order.' });
+    }
 });
 
-// Start the server
+// Admin login endpoint
+app.post('/admin/login', async (req, res) => {
+    const { username, password } = req.body;
+    const admin = await Admin.findOne({ username });
+    if (!admin || !(await bcrypt.compare(password, admin.password))) {
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+    const token = jwt.sign({ id: admin._id }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ success: true, token });
+});
+
+// Middleware to verify admin token
+const verifyToken = (req, res, next) => {
+    const token = req.headers['authorization'];
+    if (!token) return res.status(403).json({ success: false, message: 'No token provided' });
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(401).json({ success: false, message: 'Unauthorized' });
+        req.adminId = decoded.id;
+        next();
+    });
+};
+
+// Get sales statistics (protected route)
+app.get('/admin/sales', verifyToken, async (req, res) => {
+    try {
+        const salesData = await Order.aggregate([
+            { $group: { _id: '$date', totalSales: { $sum: '$totalPrice' }, totalOrders: { $sum: 1 } } }
+        ]);
+        res.json({ success: true, salesData });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching sales data' });
+    }
+});
+
+// Start server
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
