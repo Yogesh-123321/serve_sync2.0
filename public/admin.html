@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            background: url('background.jpg') no-repeat center center fixed;
+            background: url('BACKGROUND.jpg') no-repeat center center fixed;
             background-size: cover;
             font-family: Arial, sans-serif;
         }
@@ -138,18 +138,21 @@
                 const data = await res.json();
                 if (data.success) {
                     const orderTable = document.getElementById("orderData");
-                    let paymentCounts = { Cash: 0, Card: 0, UPI: 0 };
+                    let paymentCounts = { Cash: 0, UPI: 0 }; // Removed "Card" option
 
                     orderTable.innerHTML = data.orders.map(order => {
-                        paymentCounts[order.paymentMethod] = (paymentCounts[order.paymentMethod] || 0) + 1;
-                        return `
-                            <tr>
-                                <td>${order.email}</td>
-                                <td>${order.tableNumber}</td>
-                                <td>${order.paymentMethod}</td>
-                                <td>${order.orderItems.map(item => `${item.name} (₹${item.price})`).join("<br>")}</td>
-                                <td>₹${order.totalPrice}</td>
-                            </tr>`;
+                        if (order.paymentMethod !== "Card") { // Exclude Card payments
+                            paymentCounts[order.paymentMethod] = (paymentCounts[order.paymentMethod] || 0) + 1;
+                            return `
+                                <tr>
+                                    <td>${order.email}</td>
+                                    <td>${order.tableNumber}</td>
+                                    <td>${order.paymentMethod}</td>
+                                    <td>${order.orderItems.map(item => `${item.name} (₹${item.price})`).join("<br>")}</td>
+                                    <td>₹${order.totalPrice}</td>
+                                </tr>`;
+                        }
+                        return ""; // Skip rendering Card payments
                     }).join("");
 
                     new Chart(document.getElementById("paymentChart"), {
@@ -158,7 +161,7 @@
                             labels: Object.keys(paymentCounts),
                             datasets: [{
                                 data: Object.values(paymentCounts),
-                                backgroundColor: ["#ff6384", "#36a2eb", "#ffcd56"]
+                                backgroundColor: ["#ff6384", "#36a2eb"] // Only Cash & UPI colors
                             }]
                         },
                         options: { responsive: true }

@@ -6,10 +6,11 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const QRCode = require('qrcode');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'yourjwtsecret';
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
@@ -25,7 +26,7 @@ const orderSchema = new mongoose.Schema({
     paymentMethod: String,
     orderItems: Array,
     totalPrice: Number,
-    date: { type: Date, default: () => new Date() } // Ensuring correct date format
+    date: { type: Date, default: Date.now }
 });
 const Order = mongoose.model('Order', orderSchema);
 
@@ -39,26 +40,15 @@ const Admin = mongoose.model('Admin', adminSchema);
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public'), { index: false })); // Disable automatic index.html serving
-
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "home.html"));
-});
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // Serve User and Admin pages
-app.get('/index', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
+app.get('/index', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get("/admin-login", (req, res) => res.sendFile(path.join(__dirname, "public", "admin-login.html")));
+app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 
-app.get("/admin-login", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "admin-login.html"));
-});
-
-app.get("/admin", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "admin.html"));
-});
-
-// Middleware to verify admin token for API routes
+// Middleware to verify admin token
 const verifyToken = (req, res, next) => {
     const token = req.headers["authorization"];
     if (!token) return res.status(403).json({ success: false, message: "No token provided" });
@@ -75,7 +65,7 @@ const verifyToken = (req, res, next) => {
     });
 };
 
-// Save order details to MongoDB and send email
+// Save order details in MongoDB and send email
 app.post('/send-order-details', async (req, res) => {
     const { email, tableNumber, paymentMethod, orderItems, totalPrice } = req.body;
     if (!email || !tableNumber || !paymentMethod) {
@@ -85,7 +75,7 @@ app.post('/send-order-details', async (req, res) => {
     try {
         const newOrder = new Order({ email, tableNumber, paymentMethod, orderItems, totalPrice });
         await newOrder.save();
-        
+
         // Send email
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -98,7 +88,7 @@ app.post('/send-order-details', async (req, res) => {
             text: `Table Number: ${tableNumber}\nPayment Method: ${paymentMethod}\nOrder Items: ${orderItems.map(item => item.name).join(', ')}\nTotal Price: ₹${totalPrice}\nThank you for your order!`
         };
         await transporter.sendMail(mailOptions);
-        
+
         res.json({ success: true });
     } catch (error) {
         console.error('Error saving order:', error);
@@ -106,25 +96,30 @@ app.post('/send-order-details', async (req, res) => {
     }
 });
 
-// Function to create an admin with a hashed password
-const createAdmin = async () => {
-    const username = "admin";
-    const plainPassword = "admin";
-    
-    const existingAdmin = await Admin.findOne({ username });
-    if (existingAdmin) {
-        console.log("Admin already exists!");
-        return;
+// ✅ Generate QR Code for UPI Payments (Reads from .env)
+app.get('/generate-qr', async (req, res) => {
+    const amount = req.query.amount;
+    const upiId = process.env.UPI_ID; // Read from .env
+    const upiName = process.env.UPI_NAME || "Merchant"; // Default name if not set
+
+    if (!amount) {
+        return res.status(400).json({ success: false, message: "Amount is required" });
     }
-    
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
-    const newAdmin = new Admin({ username, password: hashedPassword });
-    
-    await newAdmin.save();
-    console.log("Admin created successfully!");
-};
-// Uncomment and run once to create an admin user
-//createAdmin();
+
+    if (!upiId) {
+        return res.status(500).json({ success: false, message: "UPI ID not configured in .env" });
+    }
+
+    try {
+        const upiPaymentString = `upi://pay?pa=${upiId}&pn=${upiName}&mc=&tid=&tr=&tn=OrderPayment&am=${amount}&cu=INR`;
+
+        const qrCodeUrl = await QRCode.toDataURL(upiPaymentString);
+        res.json({ success: true, qrCodeUrl });
+    } catch (error) {
+        console.error("Error generating QR code:", error);
+        res.status(500).json({ success: false, message: "Error generating QR code" });
+    }
+});
 
 // Admin login endpoint
 app.post('/admin/login', async (req, res) => {
@@ -137,7 +132,7 @@ app.post('/admin/login', async (req, res) => {
     res.json({ success: true, token });
 });
 
-// Get sales statistics (Protected API)
+// Get sales statistics
 app.get('/admin/sales', verifyToken, async (req, res) => {
     try {
         const salesData = await Order.aggregate([
@@ -150,17 +145,16 @@ app.get('/admin/sales', verifyToken, async (req, res) => {
                     totalOrders: { $sum: 1 }
                 }
             },
-            { $sort: { _id: 1 } } // Ensure sales appear in chronological order
+            { $sort: { _id: 1 } }
         ]);
 
-        console.log("Sales Data:", salesData); // Debugging: Ensure today's sales appear
         res.json({ success: true, salesData });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching sales data' });
     }
 });
 
-// Get all orders (Protected API)
+// Get all orders
 app.get('/admin/orders', verifyToken, async (req, res) => {
     try {
         const orders = await Order.find().sort({ date: -1 });

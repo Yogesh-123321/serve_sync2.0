@@ -43,11 +43,10 @@
         </label>
         <br><br>
 
-        <!-- QR Code Scanner (Initially hidden, will show on UPI/Scanner selection) -->
-        <div id="qrScanner" style="display: none;">
+        <!-- QR Code Display (Initially hidden, will show when UPI is selected) -->
+        <div id="qrCodeContainer" style="display: none; text-align: center;">
           <p>Scan the QR code using your UPI app</p>
-          <!-- QR Code Scanner will be embedded here -->
-          <video id="qr-video" width="300"></video> <!-- Video element for scanner -->
+          <img id="qrCodeImage" src="" alt="UPI QR Code" width="250">
         </div>
 
         <br>
@@ -64,6 +63,5 @@
   </footer>
 
   <script src="confirmation.js"></script>
-  <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script> <!-- Include jsQR for QR code scanning -->
 </body>
 </html>

@@ -1,22 +1,26 @@
 window.onload = function() {
   // Retrieve order data from localStorage
-  const orderItems = JSON.parse(localStorage.getItem('orderItems'));
-  const totalPrice = localStorage.getItem('totalPrice');
+  const orderItems = JSON.parse(localStorage.getItem("orderItems"));
+  const totalPrice = localStorage.getItem("totalPrice");
 
-  const orderDetails = document.getElementById('orderDetails');
-  const finalPrice = document.getElementById('finalPrice');
-  const emailInput = document.getElementById('emailInput'); // New email input reference
-  const tableNumberInput = document.getElementById('tableNumberInput');
-  const errorMessageEmail = document.createElement('div'); // Error message for invalid email
-  const errorMessageTable = document.createElement('div'); // Error message for invalid table number
+  const orderDetails = document.getElementById("orderDetails");
+  const finalPrice = document.getElementById("finalPrice");
+  const emailInput = document.getElementById("emailInput");
+  const tableNumberInput = document.getElementById("tableNumberInput");
+  const paymentForm = document.getElementById("paymentForm");
+  const qrCodeContainer = document.getElementById("qrCodeContainer");
+  const qrCodeImage = document.getElementById("qrCodeImage");
 
-  errorMessageEmail.style.color = 'red'; // Red text for email error message
-  errorMessageTable.style.color = 'red';  // Red text for table number error message
+  const errorMessageEmail = document.createElement("div");
+  const errorMessageTable = document.createElement("div");
+
+  errorMessageEmail.style.color = "red";
+  errorMessageTable.style.color = "red";
 
   // Populate order details
   if (orderItems && orderItems.length > 0) {
-    orderItems.forEach(item => {
-      const li = document.createElement('li');
+    orderItems.forEach((item) => {
+      const li = document.createElement("li");
       li.textContent = `${item.name} - ₹${item.price.toFixed(2)}`;
       orderDetails.appendChild(li);
     });
@@ -25,42 +29,69 @@ window.onload = function() {
     orderDetails.innerHTML = "<li>No items found in your order.</li>";
   }
 
+  // Listen for payment method selection
+  document.querySelectorAll('input[name="paymentMethod"]').forEach((radio) => {
+    radio.addEventListener("change", function () {
+      if (this.value === "UPI") {
+        generateQRCode(totalPrice);
+      } else {
+        qrCodeContainer.style.display = "none";
+      }
+    });
+  });
+
+  // Generate UPI QR code
+  function generateQRCode(amount) {
+    fetch(`/generate-qr?amount=${amount}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          qrCodeImage.src = data.qrCodeUrl;
+          qrCodeContainer.style.display = "block";
+        } else {
+          alert("Error generating QR code. Try again!");
+        }
+      })
+      .catch((error) => console.error("Error fetching QR code:", error));
+  }
+
   // Handle form submission for payment
-  paymentForm.addEventListener('submit', function(event) {
+  paymentForm.addEventListener("submit", function (event) {
     event.preventDefault();
 
-    // Validate email address
     const email = emailInput.value;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic regex for email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email)) {
       errorMessageEmail.textContent = "Please enter a valid email address";
-      emailInput.parentNode.appendChild(errorMessageEmail); // Append error message under the email input field
-      return; // Prevent form submission
+      emailInput.parentNode.appendChild(errorMessageEmail);
+      return;
     } else {
-      if (errorMessageEmail.textContent !== "") {
-        errorMessageEmail.textContent = ""; // Clear error message if the email is valid
-      }
+      errorMessageEmail.textContent = "";
     }
 
-    // Validate table number
     const tableNumber = tableNumberInput.value;
     const tableNumberInt = parseInt(tableNumber, 10);
 
     if (isNaN(tableNumberInt) || tableNumberInt <= 0 || tableNumberInt >= 21) {
-      errorMessageTable.textContent = "Please enter a valid table number (between 1 and 20)";
-      tableNumberInput.parentNode.appendChild(errorMessageTable); // Append error message under the table number input field
-      return; // Prevent form submission
+      errorMessageTable.textContent =
+        "Please enter a valid table number (between 1 and 20)";
+      tableNumberInput.parentNode.appendChild(errorMessageTable);
+      return;
     } else {
-      if (errorMessageTable.textContent !== "") {
-        errorMessageTable.textContent = ""; // Clear error message if the table number is valid
-      }
+      errorMessageTable.textContent = "";
     }
 
-    // Collect payment method
-    const selectedPaymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+    const selectedPaymentMethod = document.querySelector(
+      'input[name="paymentMethod"]:checked'
+    ).value;
 
-    // Prepare data to send to server
+    // If UPI is selected, ensure the QR code is generated before submitting
+    if (selectedPaymentMethod === "UPI" && qrCodeContainer.style.display === "none") {
+      alert("Please wait for the QR code to generate before submitting.");
+      return;
+    }
+
     const paymentData = {
       email: email,
       tableNumber: tableNumberInt,
@@ -69,32 +100,31 @@ window.onload = function() {
       totalPrice: totalPrice,
     };
 
-    // Store email and table number in localStorage for use on thank you page
-    localStorage.setItem('email', email);
-    localStorage.setItem('tableNumber', tableNumberInt);
+    localStorage.setItem("email", email);
+    localStorage.setItem("tableNumber", tableNumberInt);
 
-    // Send data to server using fetch API
-    fetch('/send-order-details', {
-      method: 'POST',
+    fetch("/send-order-details", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(paymentData),
     })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Redirect to thank you page with query parameters
-        window.location.href = `thankyou.html?email=${encodeURIComponent(email)}&tableNumber=${encodeURIComponent(tableNumberInt)}`;
-      } else {
-        alert("Error: " + data.message); // Show error message from server
-      }
-    })
-    .catch(error => console.error('Error:', error));
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          window.location.href = `thankyou.html?email=${encodeURIComponent(
+            email
+          )}&tableNumber=${encodeURIComponent(tableNumberInt)}`;
+        } else {
+          alert("Error: " + data.message);
+        }
+      })
+      .catch((error) => console.error("Error:", error));
   });
 };
 
 // Function to go back to the menu
 function goBack() {
-  window.location.href = 'index.html'; // Redirect back to the menu page
+  window.location.href = "index.html";
 }
