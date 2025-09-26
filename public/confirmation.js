@@ -42,8 +42,11 @@ window.onload = function() {
 
   // Generate UPI QR code
   function generateQRCode(amount) {
-    fetch(`/generate-qr?amount=${amount}`)
-      .then((response) => response.json())
+    fetch(`https://serve-sync.onrender.com/generate-qr?amount=${amount}`)  // Full backend URL!
+      .then((response) => {
+        if (!response.ok) throw new Error('HTTP error ' + response.status);
+        return response.json();
+      })
       .then((data) => {
         if (data.success) {
           qrCodeImage.src = data.qrCodeUrl;
@@ -103,14 +106,17 @@ window.onload = function() {
     localStorage.setItem("email", email);
     localStorage.setItem("tableNumber", tableNumberInt);
 
-    fetch("/send-order-details", {
+    fetch("https://serve-sync.onrender.com/send-order-details", {  // Full backend URL!
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(paymentData),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) throw new Error('HTTP error ' + response.status);
+        return response.json();
+      })
       .then((data) => {
         if (data.success) {
           window.location.href = `thankyou.html?email=${encodeURIComponent(
