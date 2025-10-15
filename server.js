@@ -1,12 +1,15 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const QRCode = require('qrcode');
+
+// ✅ Add Resend
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,7 +18,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'yourjwtsecret';
 const cors = require('cors');
 app.use(cors());
 
-// Connect to MongoDB (remove deprecated options)
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.log('MongoDB Connection Error:', err));
@@ -65,7 +68,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// Save order details in MongoDB and send email (FIXED: No duplication)
+// Save order details in MongoDB and send email via Resend
 app.post('/send-order-details', async (req, res) => {
   console.log('1. Request received at /send-order-details');
   const { email, tableNumber, paymentMethod, orderItems, totalPrice } = req.body;
@@ -81,32 +84,24 @@ app.post('/send-order-details', async (req, res) => {
     await newOrder.save();
     console.log('4. Order saved successfully:', newOrder._id);
 
-    console.log('5. Sending email via Nodemailer...');
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASSWORD
-      }
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL,
-      to: email,
+    console.log('5. Sending email via Resend...');
+    
+    const { data, error } = await resend.emails.send({
+      from: 'ServeSync <onboarding@resend.dev>', // Free domain
+      to: [email],
       subject: 'Your Order Details',
       text: `Table Number: ${tableNumber}\nPayment Method: ${paymentMethod}\nOrder Items: ${orderItems.map(item => item.name).join(', ')}\nTotal Price: ₹${totalPrice}\nThank you for your order!`
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
-    console.log('6. Email sent successfully');
+    if (error) {
+      console.error('❌ Resend error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to send email' });
+    }
 
-    // ✅ Send response ONCE
+    console.log('6. Email sent successfully:', data);
     return res.json({ success: true });
   } catch (error) {
     console.error('❌ ERROR in /send-order-details:', error.message);
-    console.error('Full error:', error);
-
-    // Prevent double response
     if (!res.headersSent) {
       return res.status(500).json({ success: false, message: 'Failed to process order.' });
     }
