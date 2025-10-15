@@ -42,7 +42,7 @@ window.onload = function() {
 
   // Generate UPI QR code
   function generateQRCode(amount) {
-    fetch(`http://localhost:3000/generate-qr?amount=${amount}`)  // Full backend URL!
+    fetch(`/generate-qr?amount=${amount}`)  // Full backend URL!
       .then((response) => {
         if (!response.ok) throw new Error('HTTP error ' + response.status);
         return response.json();
@@ -106,7 +106,7 @@ window.onload = function() {
     localStorage.setItem("email", email);
     localStorage.setItem("tableNumber", tableNumberInt);
 
-    fetch("http://localhost:3000/send-order-details", {  // Full backend URL!
+    fetch("/send-order-details", {  // Full backend URL!
       method: "POST",
       headers: {
         "Content-Type": "application/json",

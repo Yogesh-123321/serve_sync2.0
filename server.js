@@ -43,7 +43,6 @@ const Admin = mongoose.model('Admin', adminSchema);
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // Serve User and Admin pages
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
@@ -166,7 +165,10 @@ app.get('/admin/orders', verifyToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Error fetching orders' });
     }
 });
-
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 // Start server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
